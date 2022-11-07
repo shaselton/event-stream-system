@@ -7,13 +7,13 @@
 `vagrant ssh` : logs into the virtualbox instance.
 
 # Install Java in Centos
-`sudo yum install java-1.7.0-openjdk`
+`sudo yum install java-11-openjdk`
 
 # Download Kafka
 `mkdir /usr/local/kafka
 cd /usr/local/kafka
-wget http://apache.claz.org/kafka/0.10.2.0/kafka_2.11-0.10.2.0.tgz
-tar -zxvf kafka_2.11-0.10.2.0.tgz
+wget http://apache.claz.org/kafka/2.3.0/kafka_2.12-2.3.0.tgz
+tar -zxvf kafka_2.12-2.3.0.tgz
 cd kafka_2.11-0.10.2.0`
 
 # Vagrant Clusters
@@ -22,13 +22,14 @@ cd kafka_2.11-0.10.2.0`
 # Download Zookeeper
 `mkdir /usr/local/zookeeper
 cd /usr/local/zookeeper
-wget http://apache.claz.org/zookeeper/zookeeper-3.4.9/zookeeper-3.4.9.tar.gz
-tar -zxvf zookeeper-3.4.9.tar.gz
-cd /usr/local/zookeeper/zookeeper-3.4.9/conf
+wget https://www-us.apache.org/dist/zookeeper/zookeeper-3.5.6/apache-zookeeper-3.5.6.tar.gz 
+tar -zxvf apache-zookeeper-3.5.6.tar.gz 
+cd apache-zookeeper-3.5.6/conf/
 cp zoo_sample.cfg zoo.cfg
 mkdir -p /var/zookeeper/data
 vim /usr/local/zookeeper/zookeeper-3.4.9/conf/zoo.cfg`
 * Add `server.1=192.168.33.100:2888:3888`
+echo "server.1=192.168.33.100:2888:3888" | cat /usr/local/zookeeper/apache-zookeeper-3.5.6/conf/zoo_sample.cfg - > temp && mv temp /usr/local/zookeeper/apache-zookeeper-3.5.6/conf/zoo_sample.cfg
 
 # Create 'myid' file for zookeeper
 `touch /var/zookeeper/data/myid
@@ -37,13 +38,18 @@ echo "1" > /var/zookeeper/data/myid`
 # Update Kafka server.properties
 `vim /usr/local/kafka/kafka_2.11-0.10.2.0/config/server.properties`
 * change `broker.id=0` to `broker.id=1`
+* sed -i 's/broker.id=0/broker.id=1/gI'  /usr/local/kafka/kafka_2.12-2.3.0/config/server.properties
 * change `zookeeper.connect=localhost:2181` to `zookeeper.connect=192.168.33.100:2181`
+* sed -i 's/localhost:2181/192.168.33.100:2181/gI'  /usr/local/kafka/kafka_2.12-2.3.0/config/server.properties
 
 # Update base_profile
 ```bash
-export ZK_HOME=/usr/local/zookeeper/zookeeper-3.4.9/
-export KAFKA_HOME=/usr/local/kafka/kafka_2.11-0.10.2.0/
+export ZK_HOME=/usr/local/zookeeper/apache-zookeeper-3.5.6/
+echo "export ZK_HOME=/usr/local/zookeeper/apache-zookeeper-3.5.6/" | cat - ~/.bash_profile > temp && mv temp ~/.bash_profile
+export KAFKA_HOME=/usr/local/kafka/kafka_2.12-2.3.0/
+echo "export KAFKA_HOME=/usr/local/kafka/kafka_2.12-2.3.0/" | cat - ~/.bash_profile > temp && mv temp ~/.bash_profile
 
+sed -i 's/\$HOME\/bin/\$HOME\/bin:\$ZK_HOME\/bin:\$KAFKA_HOME\/bin/gI' ~/.bash_profile
 PATH=$PATH:$HOME/.local/bin:$HOME/bin:$ZK_HOME/bin:$KAFKA_HOME/bin
 export PATH
 ```
